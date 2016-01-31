@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text;
@@ -24,8 +25,8 @@ namespace screenfetch
        _,.-:--._ ^ ^:-._ __../          Font: {6}
      /^         / /¨:.._¨__.;           CPU: {7}
     /          / /      ^  /            GPU: {8}
-   /          / /         /             RAM: {10}MB / {9}MB
-  /          / /         /              Manufacturer: {11}
+   /          / /         /             RAM: {9}
+  /          / /         /              OS HDD: {10}
  /_,.--:^-._/ /         /
 ^            ^¨¨-.___.:^  
 ";
@@ -39,9 +40,8 @@ namespace screenfetch
                 SystemFonts.DefaultFont.FontFamily.Name,
                 GetFromProcessor("Name"),
                 GetFromGPU("Name"),
-                Convert.ToInt64(GetFromPC("TotalVisibleMemorySize")) / 1024,
-                Convert.ToInt64(GetFromPC("FreePhysicalMemory")) / 1024,
-                GetFromPC("Manufacturer"));
+                GetRAM(),
+                GetSpace());
         }
 
         public static string GetFromPC(string what)
@@ -86,6 +86,31 @@ namespace screenfetch
                 return "Aero";
             }
             else return "Luna";
+        }
+
+        public static string GetSpace()
+        {
+            int used;
+            foreach(DriveInfo d in DriveInfo.GetDrives())
+            {
+                if(d.Name == @"C:\")
+                {
+                    used = (int)((d.TotalSize - d.AvailableFreeSpace) / (1024 * 1024 * 1024));
+                    int total = (int)(d.TotalSize / (1024 * 1024 * 1024));
+                    double inPercents = used * 100 / total;
+                    return used + "GB / " + total + "GB [" + inPercents + "%]";
+                }
+            }
+            return "";
+        }
+
+        public static string GetRAM()
+        {
+            int total = Convert.ToInt32(GetFromPC("TotalVisibleMemorySize")) / 1024;
+            int free = Convert.ToInt32(GetFromPC("FreePhysicalMemory")) / 1024;
+            int used = total - free;
+            double inPercents = used * 100 / total;
+            return used + "MB / " + total + "MB [" + inPercents + "%]";
         }
     }
 }
